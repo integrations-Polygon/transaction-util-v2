@@ -3,75 +3,76 @@ require('dotenv').config()
 const ethers = require("ethers");
 const fs = require("fs");
 
-// fetch the ABI
-const { abi } = JSON.parse(fs.readFileSync("./artifacts/contracts/Demo.sol/Demo.json"));
+// environment variables
+const network = process.env.NETWORK;
+const projectID = process.env.PROJECT_ID;
+const walletAddress = process.env.PUBLIC_KEY;
+const contractAddress = process.env.CONTRACT_ADDRESS;
+const explorerApiKey = process.env.EXPLORER_API_KEY;
+const pKey = process.env.SIGNER_PRIVATE_KEY;
+
+async function fetchAbiData() {
+	return (await fetch(`https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`)).json();
+}
 
 const fetch = require('node-fetch');
 async function fetchGasPrice() {
-    return (await fetch("https://gasstation-mumbai.matic.today/v2")).json();
-}
+	// return (await fetch("https://gasstation-mumbai.matic.today/v2")).json();
+	return (await fetch("https://ethgasstation.info/api/ethgasAPI.json")).json();
+}    
 
 async function main() {
 
-  // Configuring the connection to an Ethereum node
-  const wallet = process.env.SIGNER_PRIVATE_KEY
-  const provider = ethers.getDefaultProvider(
-      process.env.POLYGON_MUMBAI_RPC_PROVIDER
-  );
-  
-  // fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
-  const gasData = await fetchGasPrice()
-  const gasLimit = 50000;  
-  const nonce = await hre.ethers.provider.getTransactionCount(process.env.PUBLIC_KEY)
-  // Using the signing account to deploy the contract
-  const signer = new ethers.Wallet(wallet, provider);
+	// Configuring the connection to an Ethereum node
+	const provider = new ethers.providers.InfuraProvider(
+		network,
+		projectID
+	);
 
-  // Create a contract interface
-  const iface = new ethers.utils.Interface(abi);
-  
-  // Create transaction request
-  const tx = {
-    // Address of the contract we want to call
-    to: process.env.CONTRACT_ADDRESS,
-    // Encoded data payload representing the contract method calla
-    data: iface.encodeFunctionData("echo",[`Hello world at ${Date.now()}!`]),
-    nonce: nonce,
-    gasLimit: ethers.utils.hexlify(gasLimit), // 50000
-    gasPrice: gasData.fast.maxFee
-  }
+	// fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
+	const gasData = await fetchGasPrice();
+	const gasPrice = gasData.fastest * 10**9;  
 
-  // Generate Hash of the transaction to sign
-  const txnHashToSign = ethers.utils.keccak256(
-    ethers.utils.defaultAbiCoder.encode(
-        ["address","bytes","uint","uint","unit"],
-        [tx.to, tx.data, tx.nonce, tx.gasLimit, tx.gasPrice]
-    )
-  );
+	// Get the nonce for the transaction
+	const nonce = await provider.getTransactionCount(walletAddress)
 
-  // Sign the transaction hash
-  const signedTxnHash = await signer.signMessage(
-    ethers.utils.arrayify(txnHashToSign)
-  );
+	// Create a signing account from a private key
+	const signer = new ethers.Wallet(pKey, provider);
 
-  // Send the Transaction
-  const transactionHash = await provider.sendTransaction(signedTxnHash);
-  console.log("Mining transaction...");
-  console.log("transactionHash is ",transactionHash);
+	// Fetch the ABI from rinkeby API
+	const abiData = await fetchAbiData();
+	const abi = abiData.result;
 
-  console.log(`https://mumbai.polygonscan.com/tx/${contract.deployTransaction.hash}`);
+	// Create a contract interface
+	const iface = new ethers.utils.Interface(abi);
+	
+	// Create transaction request
+	const txParams = {
+	  to: contractAddress,
+	  data: iface.encodeFunctionData("echo",[`Hello world at ${Date.now()}!`]),
+	  nonce: nonce,
+	  gasLimit: 100000,
+	  gasPrice: gasPrice
+	}
 
-  // Waiting for the transaction to be mined
-  await contract.deployed();
-  // The contract is now deployed on chain!
-  console.log(`Contract deployed at ${contract.address}`);
-  console.log(data);
+	// Send the Transaction
+	await signer.sendTransaction(txParams)
+		.then(async (error,txReceipt) => {
+			if(!error) { 
+				console.log(txReceipt.result)
+			}
+			else {
+				console.log(error)
+			}	
+	})		
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+	.then(() => process.exit(0))
+	.catch((error) => {
+		console.error(error);
+		process.exit(1);
+	}
+);
