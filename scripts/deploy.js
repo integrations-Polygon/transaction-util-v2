@@ -27,10 +27,10 @@ async function main() {
   // fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
   const gasData = await fetchGasPrice()
   const gasLimit = 50000;  
-
+  const gasPrice = gasData.fast.maxPriorityFee * 10**9;
 
   // Set gas limit and gas price
-  const options = {gasLimit: gasLimit, gasPrice: gasData.fast.maxPriorityFee}
+  const options = {gasLimit: gasLimit, gasPrice: gasPrice}
 
   // Deploy the contract
   const factory = new ethers.ContractFactory(metadata.abi, metadata.data.bytecode.object, wallet)
