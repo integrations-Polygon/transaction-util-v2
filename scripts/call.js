@@ -12,8 +12,8 @@ const explorerApiKey = process.env.EXPLORER_API_KEY
 const contractAddress = process.env.CONTRACT_ADDRESS
 
 const contractFunctionCall = async (network, projectID) => {
-	try {
 
+	try {
 		// Set initial txReceipt and gas price
 		let gasPrice = 0
 		let txReceipt = null
@@ -36,57 +36,44 @@ const contractFunctionCall = async (network, projectID) => {
 		
 		// Create a contract interface
 		const iface = new ethers.utils.Interface(abi)
-
-		// fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
-		const gasData = await fetchGasPrice()
-		gasInGWEI = gasData.fastest;
-		gasPrice = gasInGWEI * 10**9;
-			
-		// Get the nonce for the transaction
-		const nonce = await provider.getTransactionCount(walletAddress)
-
-		// Handle the transaction and send it to the network
-		const txHash = await handleTransaction(
-			signer,
-			iface,
-			nonce,
-			gasPrice
-		)
 		
-		console.log("The transaction is being mined...\n")
-		console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
-		console.log(`The generated transaction hash is ${txHash}.\n`)
-		console.log('You can check your transaction at:');
-		console.log(`https://rinkeby.etherscan.io/tx/${txHash}\n`)
-		console.log('Waiting for 12 confirmation blocks...\n')
+		// Retry sending transaction utill success
+		while(txReceipt == null) {
+			// fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
+			const gasData = await fetchGasPrice()
+			gasInGWEI = gasData.fastest;
+			gasPrice = gasInGWEI * 10**9;
+				
+			// Get the nonce for the transaction
+			const nonce = await provider.getTransactionCount(walletAddress)
+
+			// Handle the transaction and send it to the network
+			const txHash = await handleTransaction(
+				signer,
+				iface,
+				nonce,
+				gasPrice
+			)
 			
-		// Wait for confirmation and get the txReceipt
-		txReceipt = await waitForConfirmation(provider, txHash)
+			console.log("The transaction is being mined...\n")
+			console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
+			console.log(`The generated transaction hash is ${txHash}.\n`)
+			console.log('You can check your transaction at:');
+			console.log(`https://rinkeby.etherscan.io/tx/${txHash}\n`)
+			console.log('Waiting for 12 confirmation blocks...\n')
+				
+			// Wait for confirmation and get the txReceipt
+			txReceipt = await waitForConfirmation(provider, txHash)
+
+			if(txReceipt == null) {
+				console.log("\nTransaction failed...Trying again!\n");
+			}
+
+			// Store failed txReceipt in DB
+
+		}
+		// Return the succeed txReceipt
 		return txReceipt
-		
-		// Loops the tranasaction until we get a fail or null receipt (testing)
-		// while (!txReceipt) {
-		// 	// fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
-		// 	const gasData = await fetchGasPrice();
-		// 	gasPrice = gasData.fastest * 10**9;
-			
-		// 	// Get the nonce for the transaction
-		// 	const nonce = await provider.getTransactionCount(walletAddress);
-			
-		// 	// Handle the transaction and send it to the network
-		// 	const txHash = await handleTransaction(
-		// 		signer,
-		// 		iface,
-		// 		nonce,
-		// 		gasPrice
-		// 	)
-
-		// 	console.log(txHash, gasPrice)
-			
-		// 	// Wait for confirmation and get the txReceipt
-		// 	txReceipt = await waitForConfirmation(provider, txHash)
-		// }
-
 	} catch (error) {
 		console.log("error in contractFunctionCall", error)
 		return "error in contractFunctionCall"
@@ -110,7 +97,8 @@ const handleTransaction = async (signer, iface, nonce, gasPrice) => {
 }
 
 const waitForConfirmation = async (provider, txHash) => {
-	try{
+
+	try {
 		let i = 0
 		while(i < 12) {
 			if(await isConfirmed(provider, txHash, 12)) {
@@ -187,7 +175,9 @@ async function startTransaction() {
 	console.log("\nStarting the transaction process.\n")
 	console.log("Fetching all the necessary data to start mining.\n")
 	let txReceipt = await contractFunctionCall(network, projectID)
-	//console.log(txReceipt)
+
+	// Store the success txReceipt in DB
+
 }
 
 startTransaction()
