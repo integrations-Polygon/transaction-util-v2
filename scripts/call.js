@@ -1,7 +1,9 @@
-const fs = require("fs")
 require('dotenv').config()
+const fs = require('fs')
 const ethers = require("ethers")
 const fetch = require('node-fetch')
+const ps = require('prompt-sync')
+const prompt = ps()
 
 // environment variables
 const network = process.env.NETWORK
@@ -9,9 +11,8 @@ const projectID = process.env.PROJECT_ID
 const pKey = process.env.SIGNER_PRIVATE_KEY
 const walletAddress = process.env.PUBLIC_KEY
 const explorerApiKey = process.env.EXPLORER_API_KEY
-const contractAddress = process.env.CONTRACT_ADDRESS
 
-const contractFunctionCall = async (network, projectID) => {
+const contractFunctionCall = async (contractAddress, network, projectID) => {
 
 	try {
 		// Set initial txReceipt and gas price
@@ -22,27 +23,27 @@ const contractFunctionCall = async (network, projectID) => {
 		const provider = new ethers.providers.InfuraProvider(
 			network,
 			projectID
-		);
+		)
 			
 		// Create a signing account from your private key
 		const signer = new ethers.Wallet(
 			pKey,
 			provider
-		);
-			
+		)
+
 		// Fetch the ABI from rinkeby API
-		const abiData = await fetchAbiData()
+		const abiData = await fetchAbiData(contractAddress)
 		const abi = abiData.result
 		
 		// Create a contract interface
 		const iface = new ethers.utils.Interface(abi)
 		
 		// Retry sending transaction utill success
-		while(txReceipt == null) {
+		while(txReceipt === null) {
 			// fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
 			const gasData = await fetchGasPrice()
-			gasInGWEI = gasData.fastest;
-			gasPrice = gasInGWEI * 10**9;
+			gasInGWEI = gasData.fastest
+			gasPrice = gasInGWEI * 10**9
 				
 			// Get the nonce for the transaction
 			const nonce = await provider.getTransactionCount(walletAddress)
@@ -50,6 +51,7 @@ const contractFunctionCall = async (network, projectID) => {
 			// Handle the transaction and send it to the network
 			const txHash = await handleTransaction(
 				signer,
+				contractAddress, 
 				iface,
 				nonce,
 				gasPrice
@@ -58,19 +60,16 @@ const contractFunctionCall = async (network, projectID) => {
 			console.log("The transaction is being mined...\n")
 			console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
 			console.log(`The generated transaction hash is ${txHash}.\n`)
-			console.log('You can check your transaction at:');
+			console.log('You can check your transaction at:')
 			console.log(`https://rinkeby.etherscan.io/tx/${txHash}\n`)
-			console.log('Waiting for 12 confirmation blocks...\n')
+			console.log('Waiting for 12 Block Confirmations (checks every 15 second)\n')
 				
 			// Wait for confirmation and get the txReceipt
 			txReceipt = await waitForConfirmation(provider, txHash)
 
-			if(txReceipt == null) {
-				console.log("\nTransaction failed...Trying again!\n");
+			if(txReceipt === null) {
+				console.log("\nTransaction failed...Trying again!\n")
 			}
-
-			// Store failed txReceipt in DB
-
 		}
 		// Return the succeed txReceipt
 		return txReceipt
@@ -80,7 +79,7 @@ const contractFunctionCall = async (network, projectID) => {
 	}
 }
 
-const handleTransaction = async (signer, iface, nonce, gasPrice) => {
+const handleTransaction = async (signer, contractAddress, iface, nonce, gasPrice) => {
 	
 	// Create transaction request object
 	const txParams = {
@@ -92,7 +91,7 @@ const handleTransaction = async (signer, iface, nonce, gasPrice) => {
 	}
 
 	// Send the Transaction
-	const tx = await signer.sendTransaction(txParams);
+	const tx = await signer.sendTransaction(txParams)
 	return tx.hash
 }
 
@@ -100,10 +99,11 @@ const waitForConfirmation = async (provider, txHash) => {
 
 	try {
 		let i = 0
-		while(i < 12) {
+		while(i < 20) {
 			if(await isConfirmed(provider, txHash, 12)) {
 
-				console.log(txHash, ' was confirmed by 12 blocks')
+				console.log("\n")
+				console.log(txHash, 'was confirmed by 12 blocks')
 
 				// Returns the transaction receipt for the txHash
 				const txReceipt = await provider.getTransactionReceipt(txHash)
@@ -135,9 +135,9 @@ const isConfirmed = async (provider, txHash, blocks) => {
 
 		// Returns the most recently mined blockNumber
 		const lastestBlockNumber = await provider.getBlockNumber()
-		
-		//Returns the most recently mined block
-		// const block = await provider.getBlock(blockNumber)
+
+		// Display the number of confirmed blocks
+		console.log(`${lastestBlockNumber - tx.blockNumber} Block Confirmations `)
 		
 		// Check if the block confirmation is more than or equal to 12 blocks
 		if(lastestBlockNumber - tx.blockNumber >= blocks) {
@@ -151,6 +151,42 @@ const isConfirmed = async (provider, txHash, blocks) => {
 	}
 }
 
+const dataMapping = async (txReceipt) => {
+
+	const mappedReceipt = {
+		status 						:				txReceipt.status,
+		type						:				txReceipt.type,
+		from						:				txReceipt.from,
+		to							:				txReceipt.to,
+		blockHash					:				txReceipt.blockHash,
+		blockNumber					:				txReceipt.blockNumber,
+		transactionHash				:				txReceipt.transactionHash,
+		cumulativeGasUsed 			:				txReceipt.cumulativeGasUsed.toString(),
+		effectiveGasPrice			:				txReceipt.effectiveGasPrice.toString(),
+		gasUsed						:				txReceipt.gasUsed.toString()
+	}
+
+	return mappedReceipt
+}
+
+const saveReceipt = async (mappedReceipt) => {
+
+	try {
+		if(fs.existsSync("log/call_log.json")) {
+			const existingLog = fs.readFileSync("log/call_log.json")
+			const parseLog = JSON.parse(existingLog)
+			const jsonString = await JSON.stringify(parseLog, null, 2) // indentation by 2
+			fs.writeFileSync("log/call_log.json", jsonString)
+		} else {
+			const jsonString = await JSON.stringify(mappedReceipt, null, 2) // indentation by 2
+			fs.writeFileSync("log/call_log.json", jsonString) 
+		}	
+		console.log("\nTransaction receipt has been logged successfully in the log folder.\n")
+	} catch(e) {
+		console.error(e)
+	}
+}	
+
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(
 		resolve,
@@ -158,14 +194,14 @@ function sleep(ms) {
 	))
 }
 
-async function fetchAbiData() {
+async function fetchAbiData(contractAddress) {
 	return (await fetch(
 		`https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`
 	)).json()
 }
 
 async function fetchGasPrice() {
-	// return (await fetch("https://gasstation-mumbai.matic.today/v2")).json();
+	// return (await fetch("https://gasstation-mumbai.matic.today/v2")).json()
 	return (await fetch(
 		"https://ethgasstation.info/api/ethgasAPI.json"
 	)).json()
@@ -173,16 +209,21 @@ async function fetchGasPrice() {
 
 async function startTransaction() {
 	console.log("\nStarting the transaction process.\n")
-	console.log("Fetching all the necessary data to start mining.\n")
-	let txReceipt = await contractFunctionCall(network, projectID)
 
-	// Store the success txReceipt in DB
+	const contractAddress = prompt('Input the deployed and verified smart contract address: ')
+	console.log("Fetching all the necessary data to start mining.\n")
+
+	const txReceipt = await contractFunctionCall(contractAddress, network, projectID)
+	console.log("Transaction was mined successfully and confirmed by 12 blocks.\n")
+
+	const mappedReceipt = await dataMapping(txReceipt)
+	// Store the success mappedReceipt in JSON file
+	saveReceipt(mappedReceipt)
 
 }
 
 startTransaction()
 	.then(() => {
-		console.log("Transaction was mined successfully and confirmed by 12 blocks.\n")
 		console.log("Transaction process completed.\n\n")
 		process.exit(0)
 	})
