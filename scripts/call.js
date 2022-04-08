@@ -157,12 +157,12 @@ const dataMapping = async (txReceipt) => {
 		status 						:				txReceipt.status,
 		type						:				txReceipt.type,
 		from						:				txReceipt.from,
-		to							:				txReceipt.to,
+		to						:				txReceipt.to,
 		blockHash					:				txReceipt.blockHash,
 		blockNumber					:				txReceipt.blockNumber,
-		transactionHash				:				txReceipt.transactionHash,
-		cumulativeGasUsed 			:				txReceipt.cumulativeGasUsed.toString(),
-		effectiveGasPrice			:				txReceipt.effectiveGasPrice.toString(),
+		transactionHash					:				txReceipt.transactionHash,
+		cumulativeGasUsed 				:				txReceipt.cumulativeGasUsed.toString(),
+		effectiveGasPrice				:				txReceipt.effectiveGasPrice.toString(),
 		gasUsed						:				txReceipt.gasUsed.toString()
 	}
 
