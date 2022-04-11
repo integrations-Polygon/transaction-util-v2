@@ -1,26 +1,21 @@
+/*
+    - If the tx or tx block number is null then return false
+    - Get the latest block number and subract it with the current
+      transaction block number to get the block confirmation number
+    - If the result of subtraction is equal to 12 return true
+    - Else return false 
+*/
+
 const isConfirmed = async (provider, txHash, blocks) => {
     try {
-        // Returns the transaction's hash
         const tx = await provider.getTransaction(txHash)
-
-        if (!tx || !tx.blockNumber) {
-            return false
-        }
-
-        // Returns the most recently mined blockNumber
+        if (!tx || !tx.blockNumber) return false
         const lastestBlockNumber = await provider.getBlockNumber()
-
-        // Display the number of confirmed blocks
         console.log(
-            `${lastestBlockNumber - tx.blockNumber} Block Confirmations `
+            `${lastestBlockNumber - tx.blockNumber} Block Confirmations`
         )
-
-        // Check if the block confirmation is more than or equal to 12 blocks
-        if (lastestBlockNumber - tx.blockNumber >= blocks) {
-            return true
-        } else {
-            return false
-        }
+        if (lastestBlockNumber - tx.blockNumber >= blocks) return true
+        return false
     } catch (error) {
         console.log("error in isConfirmed", error)
         return false
