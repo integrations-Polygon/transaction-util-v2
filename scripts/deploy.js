@@ -5,7 +5,9 @@ require('dotenv').config()
 const fetch = require('node-fetch');
 const Redis = require('redis')
 
+// Create an Instance of Redis Client
 const redisClient = Redis.createClient()
+
 // env variables 
 const privateKey = process.env.SIGNER_PRIVATE_KEY
 const projectID = process.env.PROJECT_ID
@@ -18,7 +20,6 @@ const Deployment = async (network, projectID) => {
     // Set initial txReceipt and gas price and gasIncrement
 		let gasPrice = 0
 		let txReceipt = null
-    let gasIncrement = 0 //gas incrementation in case tx fails
 
     // later we can change this to mumbai
     // Configuring the connection to an Rinkeby node
@@ -39,8 +40,7 @@ const Deployment = async (network, projectID) => {
       const gasData = await fetchGasPrice()
       const gasLimit = 200000;
       const gasInGWEI = gasData.fastest 
-      gasPrice = gasInGWEI * 10**9 + gasIncrement
-      gasIncrement += 10000
+      gasPrice = gasInGWEI * 10**9
 
       // Set gas limit and gas price
       const options = {gasLimit: gasLimit, gasPrice: gasPrice}
@@ -66,7 +66,10 @@ const Deployment = async (network, projectID) => {
 			}
 
       // Store failed txReceipt in Redis DB
-	  redisClient.hset('Transaction Log', 'txhash', "reverted")
+	  redisClient.HSET('Transaction Log', 'txhash', txReceipt.transactionHash)
+	  	redisClient.HSET('Transaction Log', 'from', txReceipt.from)
+	  	redisClient.HSET('Transaction Log', 'status', "Reverted")
+
     }
 
     // Wait for the contract to get mined
@@ -152,8 +155,11 @@ async function startDeployment() {
 	let txReceipt = await Deployment(network, projectID)
 
 	// Store the success txReceipt in Redis DB
-	redisClient.hset('Transaction Log', 'Contract address', contract.address.toString())
-	redisClient.hset('Transaction Log', 'transaction hash', txReceipt.transactionHash) 
+	redisClient.HSET('Transaction Log', 'Transaction Hash', txReceipt.transactionHash)
+		redisClient.HSET('Transaction Log', 'From ', txReceipt.from)
+		redisClient.HSET('Transaction Log', 'To ', txReceipt.to)
+		redisClient.HSET('Transaction Log', 'Contract Address ', txReceipt.contractAddress)
+		redisClient.HSET('Transaction Log', 'Gas Used', txReceipt.gasUsed)
 }
 
 startDeployment()
