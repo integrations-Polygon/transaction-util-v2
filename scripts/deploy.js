@@ -3,9 +3,9 @@ const fs = require('fs');
 const hre = require("hardhat");
 require('dotenv').config()
 const fetch = require('node-fetch');
+const Redis = require('redis')
 
-
-
+const redisClient = Redis.createClient()
 // env variables 
 const privateKey = process.env.SIGNER_PRIVATE_KEY
 const projectID = process.env.PROJECT_ID
@@ -65,9 +65,8 @@ const Deployment = async (network, projectID) => {
 				console.log("\nTransaction failed...Trying again!\n");
 			}
 
-      // Store failed txReceipt in DB
-      await saveReceipt(contract.address, txReceipt)
-
+      // Store failed txReceipt in Redis DB
+	  redisClient.hset('Transaction Log', 'txhash', "reverted")
     }
 
     // Wait for the contract to get mined
@@ -135,18 +134,6 @@ const isConfirmed = async (provider, txHash, blocks) => {
 	}
 }
 
-const saveReceipt = async (address, txReceipt) => {
-  const resultFile = "result.json"
-  const result = JSON.parse(fs.readFileSync(path.resolve(__dirname, resultFile)).toString())
-  if (txReceipt.status == false) {
-      result[address] = 'reverted'
-      fs.writeFileSync(resultFile, JSON.stringify(result, null, 2)) // Indent 2 spaces
-      return
-  } else {
-      result[address] = txReceipt.transactionHash
-      fs.writeFileSync(path.resolve(__dirname, resultFile), JSON.stringify(result, null, 2)) // Indent 2 spaces
-  }
-}
 
 async function fetchGasPrice() {
   return (await fetch("https://ethgasstation.info/api/ethgasAPI.json")).json();
@@ -164,9 +151,9 @@ async function startDeployment() {
 	console.log("Fetching all the necessary data to start mining.\n")
 	let txReceipt = await Deployment(network, projectID)
 
-	// Store the success txReceipt in DB
-  await saveReceipt(contract.address, txReceipt)
-  
+	// Store the success txReceipt in Redis DB
+	redisClient.hset('Transaction Log', 'Contract address', contract.address.toString())
+	redisClient.hset('Transaction Log', 'transaction hash', txReceipt.transactionHash) 
 }
 
 startDeployment()
