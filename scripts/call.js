@@ -14,6 +14,8 @@ const { fetchAbiData, fetchGasPrice } = require("./utils/fetchData")
 const contractFunctionCall = async (
     txType,
     contractAddress,
+    functionName,
+    arrayOfParams,
     network,
     projectID
 ) => {
@@ -40,6 +42,8 @@ const contractFunctionCall = async (
                 signer,
                 txType,
                 contractAddress,
+                functionName,
+                arrayOfParams,
                 iface,
                 nonce,
                 gasPrice
@@ -82,6 +86,8 @@ const handleTransaction = async (
     signer,
     txType,
     contractAddress,
+    functionName,
+    arrayOfParams,
     iface,
     nonce,
     gasPrice
@@ -90,8 +96,8 @@ const handleTransaction = async (
         const txPayload = {
             type: 1,
             to: contractAddress,
-            data: iface.encodeFunctionData("echo", [
-                `Hello world at ${Date.now()}!`,
+            data: iface.encodeFunctionData(functionName.toString(), [
+                arrayOfParams.toString(),
             ]),
             nonce: nonce,
             gasLimit: 100000,
@@ -105,8 +111,8 @@ const handleTransaction = async (
         const txPayload = {
             type: 2,
             to: contractAddress,
-            data: iface.encodeFunctionData("echo", [
-                `Hello world at ${Date.now()}!`,
+            data: iface.encodeFunctionData(functionName.toString(), [
+                arrayOfParams.toString(),
             ]),
             nonce: nonce,
             gasLimit: 100000,
@@ -120,6 +126,8 @@ const handleTransaction = async (
 }
 
 async function startTransaction() {
+    let arrayOfParams = []
+
     console.log("\nStarting the transaction process\n")
 
     const txType = prompt(
@@ -136,11 +144,24 @@ async function startTransaction() {
     if (contractAddress.length !== 42)
         return console.log(`${contractAddress} is not a valid address`)
 
+    const functionName = prompt("Enter the name of the function to call: ")
+    if (!functionName) return console.log("Function name cannot be null")
+
+    const totalParams = prompt("Enter the total number of parameter: ")
+    if (!totalParams)
+        return console.log("Total number of parameter cannot be null")
+    if (totalParams !== 0) {
+        for (i = 0; i < totalParams; i++)
+            arrayOfParams[i] = prompt(`Enter your parameter[${i + 1}]: `)
+    }
+
     console.log("\nFetching all the necessary data to start mining\n")
 
     const txReceipt = await contractFunctionCall(
         txType,
         contractAddress,
+        functionName,
+        arrayOfParams,
         network,
         projectID
     )
