@@ -3,8 +3,10 @@ const fs = require('fs');
 const hre = require("hardhat");
 require('dotenv').config()
 const fetch = require('node-fetch');
+const Redis = require('redis')
 
-
+// Create an Instance of Redis Client
+const redisClient = Redis.createClient()
 
 // env variables 
 const privateKey = process.env.SIGNER_PRIVATE_KEY
@@ -18,7 +20,6 @@ const Deployment = async (network, projectID) => {
     // Set initial txReceipt and gas price and gasIncrement
 		let gasPrice = 0
 		let txReceipt = null
-    let gasIncrement = 0 //gas incrementation in case tx fails
 
     // later we can change this to mumbai
     // Configuring the connection to an Rinkeby node
@@ -39,8 +40,7 @@ const Deployment = async (network, projectID) => {
       const gasData = await fetchGasPrice()
       const gasLimit = 200000;
       const gasInGWEI = gasData.fastest 
-      gasPrice = gasInGWEI * 10**9 + gasIncrement
-      gasIncrement += 10000
+      gasPrice = gasInGWEI * 10**9
 
       // Set gas limit and gas price
       const options = {gasLimit: gasLimit, gasPrice: gasPrice}
@@ -65,8 +65,10 @@ const Deployment = async (network, projectID) => {
 				console.log("\nTransaction failed...Trying again!\n");
 			}
 
-      // Store failed txReceipt in DB
-      await saveReceipt(contract.address, txReceipt)
+      // Store failed txReceipt in Redis DB
+	  redisClient.HSET('Transaction Log', 'txhash', txReceipt.transactionHash)
+	  	redisClient.HSET('Transaction Log', 'from', txReceipt.from)
+	  	redisClient.HSET('Transaction Log', 'status', "Reverted")
 
     }
 
@@ -135,18 +137,6 @@ const isConfirmed = async (provider, txHash, blocks) => {
 	}
 }
 
-const saveReceipt = async (address, txReceipt) => {
-  const resultFile = "result.json"
-  const result = JSON.parse(fs.readFileSync(path.resolve(__dirname, resultFile)).toString())
-  if (txReceipt.status == false) {
-      result[address] = 'reverted'
-      fs.writeFileSync(resultFile, JSON.stringify(result, null, 2)) // Indent 2 spaces
-      return
-  } else {
-      result[address] = txReceipt.transactionHash
-      fs.writeFileSync(path.resolve(__dirname, resultFile), JSON.stringify(result, null, 2)) // Indent 2 spaces
-  }
-}
 
 async function fetchGasPrice() {
   return (await fetch("https://ethgasstation.info/api/ethgasAPI.json")).json();
@@ -164,9 +154,12 @@ async function startDeployment() {
 	console.log("Fetching all the necessary data to start mining.\n")
 	let txReceipt = await Deployment(network, projectID)
 
-	// Store the success txReceipt in DB
-  await saveReceipt(contract.address, txReceipt)
-  
+	// Store the success txReceipt in Redis DB
+	redisClient.HSET('Transaction Log', 'Transaction Hash', txReceipt.transactionHash)
+		redisClient.HSET('Transaction Log', 'From ', txReceipt.from)
+		redisClient.HSET('Transaction Log', 'To ', txReceipt.to)
+		redisClient.HSET('Transaction Log', 'Contract Address ', txReceipt.contractAddress)
+		redisClient.HSET('Transaction Log', 'Gas Used', txReceipt.gasUsed)
 }
 
 startDeployment()
