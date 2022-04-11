@@ -6,14 +6,16 @@ const network = process.env.NETWORK
 const projectID = process.env.PROJECT_ID
 const pKey = process.env.SIGNER_PRIVATE_KEY
 const walletAddress = process.env.PUBLIC_KEY
+const isNumeric = require("./utils/isNumeric")
 const saveReceipt = require("./utils/saveReceipt")
 const dataMapping = require("./utils/dataMapping")
+const { fetchGasPrice } = require("./utils/fetchData")
 const waitForConfirmation = require("./utils/waitForComfirmation")
-const { fetchAbiData, fetchGasPrice } = require("./utils/fetchData")
 
-const contractFunctionCall = async (
+const accountTransfer = async (
     txType,
-    contractAddress,
+    receiverAddress,
+    amountInETH,
     network,
     projectID
 ) => {
@@ -24,9 +26,6 @@ const contractFunctionCall = async (
 
         const provider = new ethers.providers.InfuraProvider(network, projectID)
         const signer = new ethers.Wallet(pKey, provider)
-        const abiData = await fetchAbiData(contractAddress)
-        const abi = abiData.result
-        const iface = new ethers.utils.Interface(abi)
 
         // Retry sending transaction utill success, 10 retries max
         while (txReceipt === null && retry < 10) {
@@ -34,19 +33,24 @@ const contractFunctionCall = async (
             gasInGWEI = gasData.fastest
             gasPrice = gasInGWEI * 10 ** 9
 
+            // Convert the amount in ETH to WEI
+            const amount = ethers.BigNumber.from(
+                ethers.utils.parseEther(amountInETH)
+            )
+
             const nonce = await provider.getTransactionCount(walletAddress)
 
             txHash = await handleTransaction(
                 signer,
                 txType,
-                contractAddress,
-                iface,
+                receiverAddress,
+                amount,
                 nonce,
                 gasPrice
             )
 
             console.log(
-                `Your transaction is being mined and the gas price being used is ${gasInGWEI} GWEI`
+                `Your transaction is being mined and the gas price being used is ${gasInGWEI} GWEI.`
             )
             console.log(`The generated transaction hash is ${txHash}\n`)
             console.log("You can check your transaction at:")
@@ -62,8 +66,8 @@ const contractFunctionCall = async (
                 console.log("\nTransaction failed...Trying again!\n")
             }
         }
-        // Return the success txReceipt
-        if (txReceipt != null) {
+        // Return the succeed txReceipt
+        if (txReceipt !== null) {
             console.log(
                 "Transaction was mined successfully and confirmed by 12 blocks"
             )
@@ -73,28 +77,26 @@ const contractFunctionCall = async (
         // Return the failed txReceipt
         return (txReceipt = await provider.getTransactionReceipt(txHash))
     } catch (error) {
-        console.log("error in contractFunctionCall", error)
-        return "error in contractFunctionCall"
+        console.log("error in accountTransfer", error)
+        return "error in accountTransfer"
     }
 }
 
 const handleTransaction = async (
     signer,
     txType,
-    contractAddress,
-    iface,
+    receiverAddress,
+    amount,
     nonce,
     gasPrice
 ) => {
     if (txType === "1") {
         const txPayload = {
             type: 1,
-            to: contractAddress,
-            data: iface.encodeFunctionData("echo", [
-                `Hello world at ${Date.now()}!`,
-            ]),
+            to: receiverAddress,
+            value: amount,
             nonce: nonce,
-            gasLimit: 100000,
+            gasLimit: 21000,
             gasPrice: gasPrice,
         }
         const tx = await signer.sendTransaction(txPayload)
@@ -104,19 +106,17 @@ const handleTransaction = async (
     if (txType === "2") {
         const txPayload = {
             type: 2,
-            to: contractAddress,
-            data: iface.encodeFunctionData("echo", [
-                `Hello world at ${Date.now()}!`,
-            ]),
+            to: receiverAddress,
+            value: amount,
             nonce: nonce,
-            gasLimit: 100000,
+            gasLimit: 21000,
             maxPriorityFeePerGas: gasPrice,
             maxFeePerGas: gasPrice,
         }
         const tx = await signer.sendTransaction(txPayload)
         return tx.hash
     }
-    console.log(`Unsupported transaction type ${txType}`)
+    console.log(`Unsupported transaction type ${txType}.`)
 }
 
 async function startTransaction() {
@@ -129,18 +129,22 @@ async function startTransaction() {
     if (txType !== "1" && txType !== "2")
         return console.log(`Transaction type ${txType} is unsupported`)
 
-    const contractAddress = prompt(
-        "Enter the deployed & verified smart contract address: "
-    )
-    if (!contractAddress) return console.log("Contract address cannot be null")
-    if (contractAddress.length !== 42)
-        return console.log(`${contractAddress} is not a valid address`)
+    const receiverAddress = prompt("Enter the receiver address: ")
+    if (!receiverAddress) return console.log("Receiver address cannot be null")
+    if (receiverAddress.length !== 42)
+        return console.log(`${receiverAddress} is not a valid address`)
+
+    const amountInETH = prompt("Enter the amount of ETH to transfer: ")
+    if (!amountInETH) return console.log("Transfer amount cannot be null")
+    if (isNumeric(amountInETH) === false)
+        return console.log("Invalid transfer amount")
 
     console.log("\nFetching all the necessary data to start mining\n")
 
-    const txReceipt = await contractFunctionCall(
+    const txReceipt = await accountTransfer(
         txType,
-        contractAddress,
+        receiverAddress,
+        amountInETH,
         network,
         projectID
     )
