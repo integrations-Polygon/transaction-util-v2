@@ -14,5 +14,7 @@ async function fetchAbiData(contractAddress) {
     ).json()
 }
 
-module.exports.fetchAbiData = fetchAbiData
-module.exports.fetchGasPrice = fetchGasPrice
+module.exports = {
+    fetchGasPrice,
+    fetchAbiData,
+}
