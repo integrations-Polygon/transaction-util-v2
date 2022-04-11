@@ -1,6 +1,13 @@
 const sleep = require("./sleep")
 const isConfirmed = require("./isConfirmed")
 
+/*  
+    - Total wait time is 5mins (15000ms  * 20)
+    - Every 15 seconds check for the 12 block confirmations status
+    - If the tx hash gets confirmed by 12 blocks within 5 mins then return the tx receipt
+    - Else return null 
+*/
+
 const waitForConfirmation = async (provider, txHash) => {
     try {
         let i = 0
@@ -8,17 +15,10 @@ const waitForConfirmation = async (provider, txHash) => {
             if (await isConfirmed(provider, txHash, 12)) {
                 console.log("\n")
                 console.log(txHash, "was confirmed by 12 blocks")
-
-                // Returns the transaction receipt for the txHash
                 const txReceipt = await provider.getTransactionReceipt(txHash)
-
                 if (txReceipt != null) return txReceipt
             }
-            // Increment i
             i += 1
-
-            // Wait for 15000 ms each run and check if the transaction gets 12 block confirmation on the next run
-            // Total wait time is 5mins (if the transaction is dropped) until retry
             await sleep(15000)
         }
         return null
