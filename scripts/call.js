@@ -6,6 +6,7 @@ const network = process.env.NETWORK
 const projectID = process.env.PROJECT_ID
 const pKey = process.env.SIGNER_PRIVATE_KEY
 const walletAddress = process.env.PUBLIC_KEY
+const redisDB = require("./utils/redisDB")
 const saveReceipt = require("./utils/saveReceipt")
 const dataMapping = require("./utils/dataMapping")
 const waitForConfirmation = require("./utils/waitForComfirmation")
@@ -15,7 +16,7 @@ const contractFunctionCall = async (
     txType,
     contractAddress,
     functionName,
-    arrayOfParams,
+    arrayOfArgs,
     network,
     projectID
 ) => {
@@ -43,7 +44,7 @@ const contractFunctionCall = async (
                 txType,
                 contractAddress,
                 functionName,
-                arrayOfParams,
+                arrayOfArgs,
                 iface,
                 nonce,
                 gasPrice
@@ -87,7 +88,7 @@ const handleTransaction = async (
     txType,
     contractAddress,
     functionName,
-    arrayOfParams,
+    arrayOfArgs,
     iface,
     nonce,
     gasPrice
@@ -97,7 +98,7 @@ const handleTransaction = async (
             type: 1,
             to: contractAddress,
             data: iface.encodeFunctionData(functionName.toString(), [
-                arrayOfParams.toString(),
+                arrayOfArgs.toString(),
             ]),
             nonce: nonce,
             gasLimit: 100000,
@@ -112,7 +113,7 @@ const handleTransaction = async (
             type: 2,
             to: contractAddress,
             data: iface.encodeFunctionData(functionName.toString(), [
-                arrayOfParams.toString(),
+                arrayOfArgs.toString(),
             ]),
             nonce: nonce,
             gasLimit: 100000,
@@ -126,7 +127,7 @@ const handleTransaction = async (
 }
 
 async function startTransaction() {
-    let arrayOfParams = []
+    let arrayOfArgs = []
 
     console.log("\nStarting the transaction process\n")
 
@@ -147,12 +148,12 @@ async function startTransaction() {
     const functionName = prompt("Enter the name of the function to call: ")
     if (!functionName) return console.log("Function name cannot be null")
 
-    const totalParams = prompt("Enter the total number of parameter: ")
-    if (!totalParams)
-        return console.log("Total number of parameter cannot be null")
-    if (totalParams !== 0) {
-        for (i = 0; i < totalParams; i++)
-            arrayOfParams[i] = prompt(`Enter your parameter[${i + 1}]: `)
+    const totalArgs = prompt("Enter the total number of argument: ")
+    if (!totalArgs)
+        return console.log("Total number of argument cannot be null")
+    if (totalArgs !== 0) {
+        for (i = 0; i < totalArgs; i++)
+            arrayOfArgs[i] = prompt(`Enter your argument [${i + 1}]: `)
     }
 
     console.log("\nFetching all the necessary data to start mining\n")
@@ -161,13 +162,14 @@ async function startTransaction() {
         txType,
         contractAddress,
         functionName,
-        arrayOfParams,
+        arrayOfArgs,
         network,
         projectID
     )
 
     const mappedReceipt = await dataMapping(txReceipt)
-    saveReceipt(mappedReceipt)
+    await saveReceipt(mappedReceipt)
+    await redisDB(mappedReceipt)
 }
 
 startTransaction()
