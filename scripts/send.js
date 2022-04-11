@@ -150,7 +150,8 @@ async function startTransaction() {
     )
 
     const mappedReceipt = await dataMapping(txReceipt)
-    saveReceipt(mappedReceipt)
+    await saveReceipt(mappedReceipt)
+    await redisDB(mappedReceipt)
 }
 
 startTransaction()
