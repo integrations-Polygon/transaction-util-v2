@@ -11,7 +11,6 @@ const dataMapping = async (txReceipt) => {
         effectiveGasPrice: txReceipt.effectiveGasPrice.toString(),
         gasUsed: txReceipt.gasUsed.toString(),
     }
-
     return mappedReceipt
 }
 
