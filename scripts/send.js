@@ -1,17 +1,18 @@
-require("dotenv").config()
 const ps = require("prompt-sync")
 const prompt = ps()
+require("dotenv").config()
 const ethers = require("ethers")
-const network = process.env.NETWORK
-const projectID = process.env.PROJECT_ID
-const pKey = process.env.SIGNER_PRIVATE_KEY
-const walletAddress = process.env.PUBLIC_KEY
 const redisDB = require("./utils/redisDB")
 const isNumeric = require("./utils/isNumeric")
 const saveReceipt = require("./utils/saveReceipt")
 const dataMapping = require("./utils/dataMapping")
 const { fetchGasPrice } = require("./utils/fetchData")
 const waitForConfirmation = require("./utils/waitForComfirmation")
+
+const network = process.env.NETWORK
+const projectID = process.env.PROJECT_ID
+const pKey = process.env.SIGNER_PRIVATE_KEY
+const walletAddress = process.env.PUBLIC_KEY
 
 const accountTransfer = async (
     txType,
