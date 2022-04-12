@@ -139,6 +139,11 @@ async function startTransaction() {
     if (isNumeric(amountInETH) === false)
         return console.log("Invalid transfer amount")
 
+    const confirmation = prompt(
+        `Are you sure you want to transfer ${amountInETH} ETH to ${receiverAddress}? (Y/N): `
+    )
+    if (confirmation !== "Y" && confirmation !== "y") return
+
     console.log("\nFetching all the necessary data to start mining\n")
 
     const txReceipt = await accountTransfer(
