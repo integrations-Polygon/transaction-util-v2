@@ -43,8 +43,8 @@ const Deployment = async (network, projectID, txType) => {
 
     const metadata = JSON.parse(fs.readFileSync(dir))
 
-    // Retry sending transaction utill success, 10 retries max
-    while (txReceipt == null && retry < 10) {
+    // Retry sending transaction utill success, 5 retries max
+    while (txReceipt == null && retry < 5) {
 
       // Fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
       const gasData = await fetchGasPrice()
@@ -74,11 +74,11 @@ const Deployment = async (network, projectID, txType) => {
     // Return the success receipt
     if (txReceipt !== null) {
       console.log(
-          "Transaction was mined successfully and confirmed by 12 blocks"
+          "Transaction was mined successfully and confirmed by 64 blocks"
       )
       return txReceipt
     }
-    console.log("Transaction failed even after 10 retries")
+    console.log("Transaction failed even after 5 retries")
     // Return the failed txReceipt
     return (txReceipt = await provider.getTransactionReceipt(txHash))
     
@@ -144,7 +144,7 @@ async function startDeployment() {
 
 startDeployment()
   .then(() => {
-    console.log("Deployment was successful and confirmed by 12 blocks.\n")
+    console.log("Deployment was successful and confirmed by 64 blocks.\n")
     process.exit(0)
   })
   .catch((error) => {
