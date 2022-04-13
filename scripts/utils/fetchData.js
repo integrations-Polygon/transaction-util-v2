@@ -10,8 +10,10 @@ async function fetchGasPriceEIP1559() {
 }
 
 async function fetchAbiData(contractAddress) {
-    return await axios.get(
-        `https://api.polygonscan.com/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`
+    return (
+        await axios.get(
+            `https://api-mumbai.polygonscan.com/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`
+        )
     ).data
 }
 
