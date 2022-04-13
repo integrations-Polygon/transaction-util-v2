@@ -1,20 +1,22 @@
-const fetch = require("node-fetch")
+const axios = require("axios").default
 const explorerApiKey = process.env.EXPLORER_API_KEY
 
-async function fetchGasPrice() {
-    // return (await fetch("https://gasstation-mumbai.matic.today/v2")).json()
-    return (await fetch("https://ethgasstation.info/api/ethgasAPI.json")).json()
+async function fetchGasPriceLegacy() {
+    return (await axios.get("https://gasstation-mumbai.matic.today/v1")).data
+}
+
+async function fetchGasPriceEIP1559() {
+    return (await axios.get("https://gasstation-mumbai.matic.today/v2")).data
 }
 
 async function fetchAbiData(contractAddress) {
-    return (
-        await fetch(
-            `https://api-rinkeby.etherscan.io/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`
-        )
-    ).json()
+    return await axios.get(
+        `https://api.polygonscan.com/api?module=contract&action=getabi&address=${contractAddress}&apikey=${explorerApiKey}`
+    ).data
 }
 
 module.exports = {
-    fetchGasPrice,
+    fetchGasPriceLegacy,
+    fetchGasPriceEIP1559,
     fetchAbiData,
 }
