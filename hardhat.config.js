@@ -7,7 +7,11 @@ module.exports = {
     solidity: "0.8.4",
     networks: {
         hardhat: {},
-        rinkeby: {
+        matic: {
+            url: RPC_PROVIDER,
+            accounts: [SIGNER_PRIVATE_KEY],
+        },
+        mumbai: {
             url: RPC_PROVIDER,
             accounts: [SIGNER_PRIVATE_KEY],
         },
