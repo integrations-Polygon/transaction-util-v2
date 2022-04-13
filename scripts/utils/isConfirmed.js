@@ -11,9 +11,6 @@ const isConfirmed = async (provider, txHash, blocks) => {
         const tx = await provider.getTransaction(txHash)
         if (!tx || !tx.blockNumber) return false
         const lastestBlockNumber = await provider.getBlockNumber()
-        console.log(
-            `${lastestBlockNumber - tx.blockNumber} Block Confirmations`
-        )
         if (lastestBlockNumber - tx.blockNumber >= blocks) return true
         return false
     } catch (error) {
