@@ -144,7 +144,7 @@ async function startDeployment() {
 
 startDeployment()
   .then(() => {
-    console.log("Deployment was successful and confirmed by 64 blocks.\n")
+    console.log("\nTransaction process has ended\n\n")
     process.exit(0)
   })
   .catch((error) => {
