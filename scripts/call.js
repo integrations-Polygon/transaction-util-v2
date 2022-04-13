@@ -6,7 +6,12 @@ const redisDB = require("./utils/redisDB")
 const saveReceipt = require("./utils/saveReceipt")
 const dataMapping = require("./utils/dataMapping")
 const waitForConfirmation = require("./utils/waitForComfirmation")
-const { fetchAbiData, fetchGasPrice } = require("./utils/fetchData")
+
+const {
+    fetchGasPriceLegacy,
+    fetchGasPriceEIP1559,
+    fetchAbiData,
+} = require("./utils/fetchData")
 
 const network = process.env.NETWORK
 const projectID = process.env.PROJECT_ID
@@ -32,12 +37,8 @@ const contractFunctionCall = async (
         const abi = abiData.result
         const iface = new ethers.utils.Interface(abi)
 
-        // Retry sending transaction utill success, 10 retries max
-        while (txReceipt === null && retry < 10) {
-            const gasData = await fetchGasPrice()
-            gasInGWEI = gasData.fastest
-            gasPrice = gasInGWEI * 10 ** 9
-
+        // Retry sending transaction utill success, 5 retries max
+        while (txReceipt === null && retry < 5) {
             const nonce = await provider.getTransactionCount(walletAddress)
 
             txHash = await handleTransaction(
@@ -47,35 +48,25 @@ const contractFunctionCall = async (
                 functionName,
                 arrayOfArgs,
                 iface,
-                nonce,
-                gasPrice
+                nonce
             )
 
-            console.log(
-                `Your transaction is being mined and the gas price being used is ${gasInGWEI} GWEI`
-            )
             console.log(`The generated transaction hash is ${txHash}\n`)
             console.log("You can check your transaction at:")
-            console.log(`https://rinkeby.etherscan.io/tx/${txHash}\n`)
-            console.log(
-                "Waiting for 12 Block Confirmations (checks every 15 second)\n"
-            )
+            console.log(`https://mumbai.polygonscan.com/tx/${txHash}\n`)
+            console.log("Waiting for 64 Block Confirmations\n")
 
             // Wait for confirmation and get the txReceipt or null
-            txReceipt = await waitForConfirmation(provider, txHash)
+            txReceipt = await waitForConfirmation(provider, txHash, txType)
             if (txReceipt === null) {
                 retry += 1
                 console.log("\nTransaction failed...Trying again!\n")
             }
         }
         // Return the success txReceipt
-        if (txReceipt != null) {
-            console.log(
-                "Transaction was mined successfully and confirmed by 12 blocks"
-            )
-            return txReceipt
-        }
-        console.log("Transaction failed even after 10 retries")
+        if (txReceipt != null) return txReceipt
+
+        console.log("Transaction failed even after 5 retries")
         // Return the failed txReceipt
         return (txReceipt = await provider.getTransactionReceipt(txHash))
     } catch (error) {
@@ -91,10 +82,12 @@ const handleTransaction = async (
     functionName,
     arrayOfArgs,
     iface,
-    nonce,
-    gasPrice
+    nonce
 ) => {
     if (txType === "1") {
+        const gasData = await fetchGasPriceLegacy()
+        maxFeeInGWEI = gasData.fastest
+        maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
         const txPayload = {
             type: 1,
             to: contractAddress,
@@ -103,13 +96,21 @@ const handleTransaction = async (
             ]),
             nonce: nonce,
             gasLimit: 100000,
-            gasPrice: gasPrice,
+            gasPrice: maxFee,
         }
         const tx = await signer.sendTransaction(txPayload)
+        console.log(
+            `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
+        )
         return tx.hash
     }
 
     if (txType === "2") {
+        const gasData = await fetchGasPriceEIP1559()
+        maxFeeInGWEI = gasData.fast.maxFee
+        maxPriorityFeeInGWEI = gasData.fast.maxPriorityFee
+        maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
+        maxPriorityFee = Math.trunc(maxPriorityFeeInGWEI * 10 ** 9)
         const txPayload = {
             type: 2,
             to: contractAddress,
@@ -118,10 +119,13 @@ const handleTransaction = async (
             ]),
             nonce: nonce,
             gasLimit: 100000,
-            maxPriorityFeePerGas: gasPrice,
-            maxFeePerGas: gasPrice,
+            maxPriorityFeePerGas: maxPriorityFee,
+            maxFeePerGas: maxFee,
         }
         const tx = await signer.sendTransaction(txPayload)
+        console.log(
+            `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
+        )
         return tx.hash
     }
     console.log(`Unsupported transaction type ${txType}`)
