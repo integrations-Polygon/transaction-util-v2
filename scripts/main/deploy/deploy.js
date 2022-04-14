@@ -4,15 +4,11 @@ const fs = require('fs')
 require('dotenv').config()
 const hre = require("hardhat")
 const ethers = require('ethers')
-const redisDB = require("./utils/redisDB")
-const dataMapping = require("./utils/dataMapping")
-const waitForConfirmation = require("./utils/waitForComfirmation")
-const {
-  fetchGasPriceLegacy,
-  fetchGasPriceEIP1559,
-  fetchAbiData,
-} = require("./utils/fetchData")
-
+const redisDB = require("../utils/redisDB")
+const handleDeployTx = require("./handleDeployTx")
+const saveReceipt = require("../utils/saveReceipt")
+const dataMapping = require("../utils/dataMapping")
+const waitForConfirmation = require("../utils/waitForComfirmation")
 
 
 // env variables 
@@ -50,15 +46,10 @@ const Deployment = async (network, projectID, txType) => {
 
     // Retry sending transaction utill success, 5 retries max
     while (txReceipt == null && retry < 5) {
-
-      // Fetch the gas fee estimation from the Polygon Gas Station V2 Endpoint
-      const gasData = await fetchGasPrice()
-      const gasInGWEI = gasData.fastest
-      gasPrice = gasInGWEI * 10 ** 9
       const nonce = await provider.getTransactionCount(walletAddress)
 
       // Get the transaction hash after the deployment
-      const txHash = await handleTransaction(signer, txType, nonce, gasPrice, metadata)
+      const txHash = await handleDeployTx(signer, txType, nonce, metadata, provider)
 
       console.log("The contract is being mined...\n")
       console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
@@ -91,67 +82,6 @@ const Deployment = async (network, projectID, txType) => {
     console.log("error in Deployment", error)
     return "error in Deployment"
   }
-}
-
-const handleTransaction = async (
-  signer,
-  txType,
-  nonce,
-  gasPrice,
-  metadata
-) => {
-  if (txType === "1") {
-    const gasData = await fetchGasPriceLegacy()
-    maxFeeInGWEI = gasData.fastest
-    maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
-    // Get the estimated gas limit for this tx payload
-    gasLimit = await provider.estimateGas({
-      type: 1,
-      nonce: nonce,
-      data: '0x' + metadata.bytecode,
-      gasLimit: 14_999_999,
-      gasPrice: maxFee,
-    })
-    // Send transaction payload with the estimated gas limit
-    const txPayload = {
-      type: 1,
-      nonce: nonce,
-      data: '0x' + metadata.bytecode,
-      gasLimit: gasLimit,
-      gasPrice: maxFee,
-    }
-    const tx = await signer.sendTransaction(txPayload)
-    return tx.hash
-  }
-
-  if (txType === "2") {
-    const gasData = await fetchGasPriceEIP1559()
-    maxFeeInGWEI = gasData.fast.maxFee
-    maxPriorityFeeInGWEI = gasData.fast.maxPriorityFee
-    maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
-    maxPriorityFee = Math.trunc(maxPriorityFeeInGWEI * 10 ** 9)
-    // Get the estimated gas limit for this tx payload
-    gasLimit = await provider.estimateGas({
-      type: 2,
-      data: '0x' + metadata.bytecode,
-      nonce: nonce,
-      gasLimit: 14_999_999,
-      maxPriorityFeePerGas: maxPriorityFee,
-      maxFeePerGas: maxFee,
-    })
-    // Send transaction payload with the estimated gas limit
-    const txPayload = {
-      type: 2,
-      nonce: nonce,
-      data: '0x' + metadata.bytecode,
-      gasLimit: gasLimit,
-      maxPriorityFeePerGas: maxPriorityFee,
-      maxFeePerGas: maxFee,
-    }
-    const tx = await signer.sendTransaction(txPayload)
-    return tx.hash
-  }
-  console.log(`Unsupported transaction type ${txType}`)
 }
 
 async function startDeployment() {
