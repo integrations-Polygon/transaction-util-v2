@@ -23,8 +23,7 @@ const Deployment = async (network, projectID, txType) => {
     let txReceipt = null
     let retry = 0
 
-    // later we can change this to mumbai
-    // Configuring the connection to an Rinkeby node
+    // Configuring the connection to Mumbai node
     const provider = new ethers.providers.InfuraProvider(
       network,
       projectID
@@ -56,23 +55,16 @@ const Deployment = async (network, projectID, txType) => {
 
       // Wait for confirmation and get the txReceipt or null
       txReceipt = await waitForConfirmation(provider, txHash)
-      if (txReceipt == null) {
+      if (txReceipt === null) {
         retry += 1
         console.log("\nTransaction failed...Trying again!\n");
       }
     }
-
-    // Return the success receipt
-    if (txReceipt !== null) {
-      console.log(
-          "Transaction was mined successfully and confirmed by 64 blocks"
-      )
-      return txReceipt
-    }
+    // Return the success txReceipt
+    if (txReceipt != null) return txReceipt
     console.log("Transaction failed even after 5 retries")
     // Return the failed txReceipt
     return (txReceipt = await provider.getTransactionReceipt(txHash))
-    
   } catch (error) {
     console.log("error in Deployment", error)
     return "error in Deployment"
