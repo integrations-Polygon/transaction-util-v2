@@ -19,6 +19,7 @@ const Deployment = async (network, projectID, txType) => {
   try {
 
     // Set initial txReceipt and gas price and gasIncrement
+    let txHash
     let txReceipt = null
     let retry = 0
 
@@ -45,13 +46,14 @@ const Deployment = async (network, projectID, txType) => {
       const nonce = await provider.getTransactionCount(walletAddress)
 
       // Get the transaction hash after the deployment
-      const txHash = await handleDeployTx(signer, txType, nonce, metadata, provider)
+      txHash = await handleDeployTx(signer, txType, nonce, metadata, provider)
 
       console.log("The contract is being mined...\n")
       console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
       console.log(`The generated transaction hash is ${txHash}.\n`)
       console.log('While your contract is being mined, you can check your transaction at:');
-      console.log(`https://rinkeby.etherscan.io/tx/${txHash}\n`)
+      console.log(`https://mumbai.polygonscan.com/tx/${txHash}\n`)
+      console.log("Waiting for 64 Block Confirmations\n")
 
       // Wait for confirmation and get the txReceipt or null
       txReceipt = await waitForConfirmation(provider, txHash)
@@ -60,8 +62,6 @@ const Deployment = async (network, projectID, txType) => {
         console.log("\nTransaction failed...Trying again!\n");
       }
     }
-    // Wait for the contract to get mined
-    console.log(`Deployment successful! Contract Address: ${contract.address}`)
 
     // Return the success receipt
     if (txReceipt !== null) {
@@ -81,7 +81,6 @@ const Deployment = async (network, projectID, txType) => {
 }
 
 async function deploy() {
-  console.log("\nStarting the transaction process.\n")
   const txType = prompt(
     "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
   )
