@@ -22,7 +22,6 @@ const Deployment = async (network, projectID, txType) => {
   try {
 
     // Set initial txReceipt and gas price and gasIncrement
-    let gasPrice = 0
     let txReceipt = null
     let retry = 0
 
