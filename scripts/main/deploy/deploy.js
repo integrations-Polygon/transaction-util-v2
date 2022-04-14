@@ -19,7 +19,7 @@ const Deployment = async (network, projectID, txType) => {
   try {
 
     // Set initial txReceipt and gas price and gasIncrement
-    let txReceipt = nullfgq
+    let txReceipt = null
     let retry = 0
 
     // later we can change this to mumbai
