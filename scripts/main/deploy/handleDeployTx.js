@@ -10,6 +10,7 @@ const {
     metadata,
     provider
   ) => {
+    let gasLimit
     if (txType === "1") {
       const gasData = await fetchGasPriceLegacy()
       maxFeeInGWEI = gasData.fastest
@@ -18,7 +19,7 @@ const {
       gasLimit = await provider.estimateGas({
         type: 1,
         nonce: nonce,
-        data: '0x' + metadata.bytecode,
+        data: metadata.bytecode,
         gasLimit: 14_999_999,
         gasPrice: maxFee,
       })
@@ -26,11 +27,14 @@ const {
       const txPayload = {
         type: 1,
         nonce: nonce,
-        data: '0x' + metadata.bytecode,
+        data: metadata.bytecode,
         gasLimit: gasLimit,
         gasPrice: maxFee,
       }
       const tx = await signer.sendTransaction(txPayload)
+      console.log(
+        `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
+    )
       return tx.hash
     }
   
@@ -43,7 +47,7 @@ const {
       // Get the estimated gas limit for this tx payload
       gasLimit = await provider.estimateGas({
         type: 2,
-        data: '0x' + metadata.bytecode,
+        data: metadata.bytecode,
         nonce: nonce,
         gasLimit: 14_999_999,
         maxPriorityFeePerGas: maxPriorityFee,
@@ -53,12 +57,15 @@ const {
       const txPayload = {
         type: 2,
         nonce: nonce,
-        data: '0x' + metadata.bytecode,
+        data: metadata.bytecode,
         gasLimit: gasLimit,
         maxPriorityFeePerGas: maxPriorityFee,
         maxFeePerGas: maxFee,
       }
       const tx = await signer.sendTransaction(txPayload)
+      console.log(
+        `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
+    )
       return tx.hash
     }
     console.log(`Unsupported transaction type ${txType}`)
