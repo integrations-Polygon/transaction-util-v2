@@ -64,7 +64,6 @@ const contractFunctionCall = async (
 
 async function call() {
     let arrayOfArgs = []
-    console.log("\nStarting the transaction process\n")
     const txType = prompt(
         "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
     )
@@ -95,7 +94,7 @@ async function call() {
         network,
         projectID
     )
-        return txReceipt
+    return txReceipt
 }
 
 module.exports = call

@@ -60,7 +60,6 @@ const accountTransfer = async (
 }
 
 async function send() {
-    console.log("\nStarting the transaction process\n")
     const txType = prompt(
         "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
     )
@@ -87,7 +86,7 @@ async function send() {
         network,
         projectID
     )
-        return txReceipt
+    return txReceipt
 }
 
 module.exports = send
