@@ -39,7 +39,7 @@ const accountTransfer = async (
             )
             console.log(`The generated transaction hash is ${txHash}\n`)
             console.log("You can check your transaction at:")
-            console.log(`https://mumbai.polygonscan.com/tx/${txHash}\n`)
+            console.log(`https://polygonscan.com/tx/${txHash}\n`)
             console.log("Waiting for 64 Block Confirmations\n")
             // Wait for confirmation and get the txReceipt or null
             txReceipt = await waitForConfirmation(provider, txHash, txType)
