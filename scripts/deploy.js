@@ -6,8 +6,13 @@ const hre = require("hardhat")
 const ethers = require('ethers')
 const redisDB = require("./utils/redisDB")
 const dataMapping = require("./utils/dataMapping")
-const { fetchGasPrice } = require("./utils/fetchData")
 const waitForConfirmation = require("./utils/waitForComfirmation")
+const {
+  fetchGasPriceLegacy,
+  fetchGasPriceEIP1559,
+  fetchAbiData,
+} = require("./utils/fetchData")
+
 
 
 // env variables 
@@ -96,25 +101,33 @@ const handleTransaction = async (
   metadata
 ) => {
   if (txType === "1") {
+    const gasData = await fetchGasPriceLegacy()
+    maxFeeInGWEI = gasData.fastest
+    maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
     const txPayload = {
       type: 1,
       nonce: nonce,
       data: '0x' + metadata.bytecode,
       gasLimit: 100000,
-      gasPrice: gasPrice,
+      gasPrice: maxFee,
     }
     const tx = await signer.sendTransaction(txPayload)
     return tx.hash
   }
 
   if (txType === "2") {
+    const gasData = await fetchGasPriceEIP1559()
+    maxFeeInGWEI = gasData.fast.maxFee
+    maxPriorityFeeInGWEI = gasData.fast.maxPriorityFee
+    maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
+    maxPriorityFee = Math.trunc(maxPriorityFeeInGWEI * 10 ** 9)
     const txPayload = {
       type: 2,
       nonce: nonce,
       data: '0x' + metadata.bytecode,
       gasLimit: 100000,
-      maxPriorityFeePerGas: gasPrice,
-      maxFeePerGas: gasPrice,
+      maxPriorityFeePerGas: maxPriorityFee,
+      maxFeePerGas: maxFee,
     }
     const tx = await signer.sendTransaction(txPayload)
     return tx.hash
