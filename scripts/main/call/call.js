@@ -6,10 +6,7 @@ const ps = require("prompt-sync")
 const prompt = ps()
 require("dotenv").config()
 const ethers = require("ethers")
-const redisDB = require("../utils/redisDB")
 const handleCallTx = require("./handleCallTx")
-const saveReceipt = require("../utils/saveReceipt")
-const dataMapping = require("../utils/dataMapping")
 const { fetchAbiData } = require("../utils/fetchData")
 const waitForConfirmation = require("../utils/waitForComfirmation")
 
@@ -65,7 +62,7 @@ const contractFunctionCall = async (
     }
 }
 
-async function startTransaction() {
+async function call() {
     let arrayOfArgs = []
     console.log("\nStarting the transaction process\n")
     const txType = prompt(
@@ -98,17 +95,7 @@ async function startTransaction() {
         network,
         projectID
     )
-    const mappedReceipt = await dataMapping(txReceipt)
-    await saveReceipt(mappedReceipt)
-    await redisDB(mappedReceipt)
+        return txReceipt
 }
 
-startTransaction()
-    .then(() => {
-        console.log("\nTransaction process has ended\n\n")
-        process.exit(0)
-    })
-    .catch((error) => {
-        console.error(error)
-        process.exit(1)
-    })
+module.exports = call

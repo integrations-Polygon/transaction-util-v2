@@ -4,10 +4,7 @@ const fs = require('fs')
 require('dotenv').config()
 const hre = require("hardhat")
 const ethers = require('ethers')
-const redisDB = require("../utils/redisDB")
 const handleDeployTx = require("./handleDeployTx")
-const saveReceipt = require("../utils/saveReceipt")
-const dataMapping = require("../utils/dataMapping")
 const waitForConfirmation = require("../utils/waitForComfirmation")
 
 
@@ -22,7 +19,7 @@ const Deployment = async (network, projectID, txType) => {
   try {
 
     // Set initial txReceipt and gas price and gasIncrement
-    let txReceipt = null
+    let txReceipt = nullfgq
     let retry = 0
 
     // later we can change this to mumbai
@@ -83,7 +80,7 @@ const Deployment = async (network, projectID, txType) => {
   }
 }
 
-async function startDeployment() {
+async function deploy() {
   console.log("\nStarting the transaction process.\n")
   const txType = prompt(
     "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
@@ -97,19 +94,7 @@ async function startDeployment() {
 
   const txReceipt = await Deployment(network, projectID, txType)
 
-  // Store the success txReceipt in Redis DB & JSON file
-  const mappedReceipt = await dataMapping(txReceipt)
-  await saveReceipt(mappedReceipt)
-  await redisDB(mappedReceipt)
+    return txReceipt
 }
 
-startDeployment()
-  .then(() => {
-    console.log("\nTransaction process has ended\n\n")
-    process.exit(0)
-  })
-  .catch((error) => {
-    console.error(error)
-    process.exit(1)
-  }
-  )    
+module.exports = deploy

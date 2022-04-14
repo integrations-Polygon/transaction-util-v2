@@ -6,11 +6,8 @@ const ps = require("prompt-sync")
 const prompt = ps()
 require("dotenv").config()
 const ethers = require("ethers")
-const redisDB = require("../utils/redisDB")
 const handleSendTx = require("./handleSendTx")
 const isNumeric = require("../utils/isNumeric")
-const saveReceipt = require("../utils/saveReceipt")
-const dataMapping = require("../utils/dataMapping")
 const waitForConfirmation = require("../utils/waitForComfirmation")
 
 const accountTransfer = async (
@@ -62,7 +59,7 @@ const accountTransfer = async (
     }
 }
 
-async function startTransaction() {
+async function send() {
     console.log("\nStarting the transaction process\n")
     const txType = prompt(
         "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
@@ -90,17 +87,7 @@ async function startTransaction() {
         network,
         projectID
     )
-    const mappedReceipt = await dataMapping(txReceipt)
-    await saveReceipt(mappedReceipt)
-    await redisDB(mappedReceipt)
+        return txReceipt
 }
 
-startTransaction()
-    .then(() => {
-        console.log("\nTransaction process has ended\n\n")
-        process.exit(0)
-    })
-    .catch((error) => {
-        console.error(error)
-        process.exit(1)
-    })
+module.exports = send
