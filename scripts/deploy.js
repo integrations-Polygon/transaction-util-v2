@@ -104,11 +104,20 @@ const handleTransaction = async (
     const gasData = await fetchGasPriceLegacy()
     maxFeeInGWEI = gasData.fastest
     maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
+    // Get the estimated gas limit for this tx payload
+    gasLimit = await provider.estimateGas({
+      type: 1,
+      nonce: nonce,
+      data: '0x' + metadata.bytecode,
+      gasLimit: 14_999_999,
+      gasPrice: maxFee,
+    })
+    // Send transaction payload with the estimated gas limit
     const txPayload = {
       type: 1,
       nonce: nonce,
       data: '0x' + metadata.bytecode,
-      gasLimit: 100000,
+      gasLimit: gasLimit,
       gasPrice: maxFee,
     }
     const tx = await signer.sendTransaction(txPayload)
@@ -121,11 +130,21 @@ const handleTransaction = async (
     maxPriorityFeeInGWEI = gasData.fast.maxPriorityFee
     maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
     maxPriorityFee = Math.trunc(maxPriorityFeeInGWEI * 10 ** 9)
+    // Get the estimated gas limit for this tx payload
+    gasLimit = await provider.estimateGas({
+      type: 2,
+      data: '0x' + metadata.bytecode,
+      nonce: nonce,
+      gasLimit: 14_999_999,
+      maxPriorityFeePerGas: maxPriorityFee,
+      maxFeePerGas: maxFee,
+    })
+    // Send transaction payload with the estimated gas limit
     const txPayload = {
       type: 2,
       nonce: nonce,
       data: '0x' + metadata.bytecode,
-      gasLimit: 100000,
+      gasLimit: gasLimit,
       maxPriorityFeePerGas: maxPriorityFee,
       maxFeePerGas: maxFee,
     }
