@@ -49,7 +49,6 @@ const Deployment = async (network, projectID, txType) => {
       txHash = await handleDeployTx(signer, txType, nonce, metadata, provider)
 
       console.log("The contract is being mined...\n")
-      console.log(`The gas price being used is ${gasInGWEI} GWEI.`)
       console.log(`The generated transaction hash is ${txHash}.\n`)
       console.log('While your contract is being mined, you can check your transaction at:');
       console.log(`https://mumbai.polygonscan.com/tx/${txHash}\n`)
