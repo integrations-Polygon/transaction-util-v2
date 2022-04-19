@@ -2,10 +2,10 @@ const sleep = require("./sleep")
 const isConfirmed = require("./isConfirmed")
 
 /*  
-    - Total wait time is 16mins (15000ms  * 64)
-    - Every 15 seconds check for the block confirmations status
-    - If the tx hash gets confirmed by 64 blocks within 16 mins then return the tx receipt
-    - Else return null 
+    - Total wait time is 5.3 mins (5000ms  * 64)
+    - Every 5 seconds check for the block confirmations status
+    - If the tx hash gets confirmed by 64 blocks within 5.3 mins then return the tx receipt
+    - Else return null and retry
 */
 
 const waitForConfirmation = async (provider, txHash) => {
@@ -22,7 +22,7 @@ const waitForConfirmation = async (provider, txHash) => {
                 if (txReceipt !== null) return txReceipt
             }
             i += 1
-            await sleep(15000)
+            await sleep(5000)
         }
         return null
     } catch (error) {
