@@ -11,12 +11,9 @@ async function startTransaction() {
     let txReceipt
     console.log("\nStarting the transaction process\n")
     console.log("Select a transaction to proceed:-")
-    console.log("1. Send MATIC to a receiving address.")
-    console.log("2. Deploy & verify your smart contract.")
-    console.log(
-        "3. Call a function/method from your deployed smart contract.\n"
-    )
-
+    console.log("1. Deploy your smart contract.")
+    console.log("2. Call a function of deployed smart contract.")
+    console.log("3. Send MATIC tokens to a receiving account address.\n")
     const choice = prompt("Enter your choice: ")
     console.log("\n")
     if (!choice) return console.log("Choice cannot be null")
@@ -24,9 +21,9 @@ async function startTransaction() {
         return console.log(`Transaction ${choice} is unsupported`)
 
     try {
-        if (choice === "1") txReceipt = await send()
-        if (choice === "2") txReceipt = await deploy()
-        if (choice === "3") txReceipt = await call()
+        if (choice === "1") txReceipt = await deploy()
+        if (choice === "2") txReceipt = await call()
+        if (choice === "3") txReceipt = await send()
 
         if (txReceipt !== null && txReceipt !== undefined) {
             const mappedReceipt = await dataMapping(txReceipt)
