@@ -58,8 +58,8 @@ const contractFunctionCall = async (
     // Return the failed txReceipt
     return (txReceipt = await provider.getTransactionReceipt(txHash))
   } catch (error) {
-    console.log("error in contractFunctionCall", error)
-    return "error in contractFunctionCall"
+    console.log("Error in contractFunctionCall", error)
+    process.exit(1)
   }
 }
 
