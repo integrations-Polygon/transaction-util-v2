@@ -15,7 +15,7 @@ const network = process.env.NETWORK
 const walletAddress = process.env.PUBLIC_KEY
 
 
-const Deployment = async (network, projectID, txType) => {
+const Deployment = async (network, projectID, txType, arrayOfArgs) => {
   try {
 
     // Set initial txReceipt and gas price and gasIncrement
@@ -45,7 +45,7 @@ const Deployment = async (network, projectID, txType) => {
       const nonce = await provider.getTransactionCount(walletAddress)
 
       // Get the transaction hash after the deployment
-      txHash = await handleDeployTx(signer, txType, nonce, metadata, provider)
+      txHash = await handleDeployTx(signer, txType, nonce, metadata, provider, arrayOfArgs)
 
       console.log("The contract is being mined...\n")
       console.log(`The generated transaction hash is ${txHash}.\n`)
@@ -72,6 +72,8 @@ const Deployment = async (network, projectID, txType) => {
 }
 
 async function deploy() {
+  let arrayOfArgs = []
+  
   const txType = prompt(
     "Enter the transaction type (1 for legacy || 2 for EIP-1559): "
   )
@@ -80,9 +82,19 @@ async function deploy() {
   if (txType !== "1" && txType !== "2")
     return console.log(`Transaction type ${txType} is unsupported`)
 
+  const totalArgs = prompt("Enter the total number of argument: ")
+
+  if (!totalArgs)
+    return console.log("Total number of argument cannot be null")
+
+  if (totalArgs !== 0) {
+    for (i = 0; i < totalArgs; i++)
+       arrayOfArgs[i] = prompt(`Enter your argument [${i + 1}]: `)
+  }
+
   console.log("Fetching all the necessary data to start mining.\n")
 
-  const txReceipt = await Deployment(network, projectID, txType)
+  const txReceipt = await Deployment(network, projectID, txType, arrayOfArgs)
 
     return txReceipt
 }
