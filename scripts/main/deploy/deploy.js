@@ -45,7 +45,7 @@ const Deployment = async (network, projectID, txType, arrayOfArgs) => {
       const nonce = await provider.getTransactionCount(walletAddress)
 
       // Get the transaction hash after the deployment
-      txHash = await handleDeployTx(signer, txType, nonce, metadata, provider, arrayOfArgs)
+      txHash = await handleDeployTx(signer, txType, nonce, metadata, provider, arrayOfArgs, iface)
 
       console.log("The contract is being mined...\n")
       console.log(`The generated transaction hash is ${txHash}.\n`)
