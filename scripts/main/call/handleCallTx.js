@@ -1,3 +1,4 @@
+const { ethers } = require("ethers")
 const {
   fetchGasPriceLegacy,
   fetchGasPriceEIP1559,
@@ -7,25 +8,19 @@ const handleCallTx = async ({
   signer,
   txType,
   contractAddress,
-  functionName,
   arrayOfArgs,
-  iface,
+  abi,
   nonce,
-  provider,
 }) => {
-  let gasLimit
   try {
+    const contract = new ethers.Contract(contractAddress, abi, signer)
     if (txType === "1") {
       const gasData = await fetchGasPriceLegacy()
       maxFeeInGWEI = gasData.fastest
       maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
       // Get the estimated gas limit for this tx payload
-      gasLimit = await provider.estimateGas({
+      const gasLimit = await contract.estimateGas.getName(...arrayOfArgs, {
         type: 1,
-        to: contractAddress,
-        data: iface.encodeFunctionData(functionName.toString(), [
-          arrayOfArgs.toString(),
-        ]),
         nonce: nonce,
         gasLimit: 14_999_999,
         gasPrice: maxFee,
@@ -33,15 +28,11 @@ const handleCallTx = async ({
       // Send actual tx payload with estimated gas limit
       const txPayload = {
         type: 1,
-        to: contractAddress,
-        data: iface.encodeFunctionData(functionName.toString(), [
-          arrayOfArgs.toString(),
-        ]),
         nonce: nonce,
         gasLimit: gasLimit,
         gasPrice: maxFee,
       }
-      const tx = await signer.sendTransaction(txPayload)
+      const tx = await contract.getName(...arrayOfArgs, txPayload)
       console.log(
         `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
       )
@@ -54,12 +45,8 @@ const handleCallTx = async ({
       maxFee = Math.trunc(maxFeeInGWEI * 10 ** 9)
       maxPriorityFee = Math.trunc(maxPriorityFeeInGWEI * 10 ** 9)
       // Get the estimated gas limit for this tx payload
-      gasLimit = await provider.estimateGas({
+      const gasLimit = await contract.estimateGas.getName(...arrayOfArgs, {
         type: 2,
-        to: contractAddress,
-        data: iface.encodeFunctionData(functionName.toString(), [
-          arrayOfArgs.toString(),
-        ]),
         nonce: nonce,
         gasLimit: 14_999_999,
         maxPriorityFeePerGas: maxPriorityFee,
@@ -68,16 +55,12 @@ const handleCallTx = async ({
       // Send actual tx payload with estimated gas limit
       const txPayload = {
         type: 2,
-        to: contractAddress,
-        data: iface.encodeFunctionData(functionName.toString(), [
-          arrayOfArgs.toString(),
-        ]),
         nonce: nonce,
         gasLimit: gasLimit,
         maxPriorityFeePerGas: maxPriorityFee,
         maxFeePerGas: maxFee,
       }
-      const tx = await signer.sendTransaction(txPayload)
+      const tx = await contract.getName(...arrayOfArgs, txPayload)
       console.log(
         `Your transaction is being mined and the gas price being used is ${maxFeeInGWEI} GWEI`
       )

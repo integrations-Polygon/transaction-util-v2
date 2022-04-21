@@ -14,7 +14,6 @@ const waitForConfirmation = require("../utils/waitForComfirmation")
 const contractFunctionCall = async ({
   txType,
   contractAddress,
-  functionName,
   arrayOfArgs,
 }) => {
   try {
@@ -25,7 +24,6 @@ const contractFunctionCall = async ({
     const signer = new ethers.Wallet(pKey, provider)
     const abiData = await fetchAbiData(contractAddress)
     const abi = abiData.result
-    const iface = new ethers.utils.Interface(abi)
     // Retry sending transaction utill success, 5 retries max
     while (txReceipt === null && retry < 5) {
       const nonce = await provider.getTransactionCount(walletAddress)
@@ -33,11 +31,9 @@ const contractFunctionCall = async ({
         signer,
         txType,
         contractAddress,
-        functionName,
         arrayOfArgs,
-        iface,
+        abi,
         nonce,
-        provider,
       }
       txHash = await handleCallTx(userTxData)
       console.log("\nYour transaction is being mined...")
@@ -77,8 +73,6 @@ async function call() {
   if (!contractAddress) return console.log("Contract address cannot be null")
   if (contractAddress.length !== 42)
     return console.log(`${contractAddress} is not a valid address`)
-  const functionName = prompt("Enter the name of the function to call: ")
-  if (!functionName) return console.log("Function name cannot be null")
   const totalArgs = prompt("Enter the total number of argument: ")
   if (!totalArgs) return console.log("Total number of argument cannot be null")
   if (isNumeric(totalArgs) === false) return console.log("Invalid input")
@@ -87,7 +81,7 @@ async function call() {
       arrayOfArgs[i] = prompt(`Enter your argument [${i + 1}]: `)
   }
   console.log("\nFetching all the necessary data to start mining\n")
-  const userInputData = { txType, contractAddress, functionName, arrayOfArgs }
+  const userInputData = { txType, contractAddress, arrayOfArgs }
   const txReceipt = await contractFunctionCall(userInputData)
   return txReceipt
 }
