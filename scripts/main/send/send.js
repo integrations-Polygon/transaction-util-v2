@@ -10,13 +10,7 @@ const handleSendTx = require("./handleSendTx")
 const isNumeric = require("../utils/isNumeric")
 const waitForConfirmation = require("../utils/waitForComfirmation")
 
-const accountTransfer = async (
-  txType,
-  receiverAddress,
-  amountInMATIC,
-  network,
-  projectID
-) => {
+const accountTransfer = async ({ txType, receiverAddress, amountInMATIC }) => {
   try {
     let txHash
     let retry = 0
@@ -25,24 +19,19 @@ const accountTransfer = async (
     const signer = new ethers.Wallet(pKey, provider)
     // Retry sending transaction utill success, 5 retries max
     while (txReceipt === null && retry < 5) {
-      // Convert the amount in MATIC to WEI
       const amount = ethers.BigNumber.from(
         ethers.utils.parseEther(amountInMATIC)
       )
       const nonce = await provider.getTransactionCount(walletAddress)
-      txHash = await handleSendTx(
-        signer,
-        txType,
-        receiverAddress,
-        amount,
-        nonce
-      )
+      const userTxData = { signer, txType, receiverAddress, amount, nonce }
+      txHash = await handleSendTx(userTxData)
+      console.log("\nYour transaction is being mined...")
       console.log(`The generated transaction hash is ${txHash}\n`)
       console.log("You can check your transaction at:")
       console.log(`https://polygonscan.com/tx/${txHash}\n`)
       console.log("Waiting for 64 Block Confirmations\n")
       // Wait for confirmation and get the txReceipt or null
-      txReceipt = await waitForConfirmation(provider, txHash, txType)
+      txReceipt = await waitForConfirmation(provider, txHash)
       if (txReceipt === null) {
         retry += 1
         console.log("\nTransaction failed...Trying again!\n")
@@ -79,13 +68,12 @@ async function send() {
   )
   if (confirmation !== "Y" && confirmation !== "y") return
   console.log("\nFetching all the necessary data to start mining\n")
-  const txReceipt = await accountTransfer(
+  const userInputData = {
     txType,
     receiverAddress,
     amountInMATIC,
-    network,
-    projectID
-  )
+  }
+  const txReceipt = await accountTransfer(userInputData)
   return txReceipt
 }
 

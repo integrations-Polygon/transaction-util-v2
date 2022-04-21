@@ -3,7 +3,13 @@ const {
   fetchGasPriceEIP1559,
 } = require("../utils/fetchData")
 
-const handleSendTx = async (signer, txType, receiverAddress, amount, nonce) => {
+const handleSendTx = async ({
+  signer,
+  txType,
+  receiverAddress,
+  amount,
+  nonce,
+}) => {
   try {
     if (txType === "1") {
       const gasData = await fetchGasPriceLegacy()
