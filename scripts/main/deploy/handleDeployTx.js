@@ -12,15 +12,15 @@ const handleDeployTx = async ({
   arrayOfArgs,
   provider,
 }) => {
-  const factory = new ethers.ContractFactory(
-    metadata.abi,
-    metadata.bytecode,
-    signer
-  )
-  const deployTransactionData = await factory.getDeployTransaction(
-    ...arrayOfArgs
-  ).data
   try {
+    const factory = new ethers.ContractFactory(
+      metadata.abi,
+      metadata.bytecode,
+      signer
+    )
+    const deployTransactionData = await factory.getDeployTransaction(
+      ...arrayOfArgs
+    ).data
     if (txType === "1") {
       const gasData = await fetchGasPriceLegacy()
       maxFeeInGWEI = gasData.fastest
