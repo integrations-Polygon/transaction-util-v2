@@ -11,14 +11,12 @@ const isNumeric = require("../utils/isNumeric")
 const { fetchAbiData } = require("../utils/fetchData")
 const waitForConfirmation = require("../utils/waitForComfirmation")
 
-const contractFunctionCall = async (
+const contractFunctionCall = async ({
   txType,
   contractAddress,
   functionName,
   arrayOfArgs,
-  network,
-  projectID
-) => {
+}) => {
   try {
     let txHash
     let retry = 0
@@ -31,7 +29,7 @@ const contractFunctionCall = async (
     // Retry sending transaction utill success, 5 retries max
     while (txReceipt === null && retry < 5) {
       const nonce = await provider.getTransactionCount(walletAddress)
-      txHash = await handleCallTx(
+      const userTxData = {
         signer,
         txType,
         contractAddress,
@@ -39,14 +37,16 @@ const contractFunctionCall = async (
         arrayOfArgs,
         iface,
         nonce,
-        provider
-      )
+        provider,
+      }
+      txHash = await handleCallTx(userTxData)
+      console.log("\nYour transaction is being mined...")
       console.log(`The generated transaction hash is ${txHash}\n`)
       console.log("You can check your transaction at:")
       console.log(`https://polygonscan.com/tx/${txHash}\n`)
       console.log("Waiting for 64 Block Confirmations\n")
       // Wait for confirmation and get the txReceipt or null
-      txReceipt = await waitForConfirmation(provider, txHash, txType)
+      txReceipt = await waitForConfirmation(provider, txHash)
       if (txReceipt === null) {
         retry += 1
         console.log("\nTransaction failed...Trying again!\n")
@@ -87,14 +87,8 @@ async function call() {
       arrayOfArgs[i] = prompt(`Enter your argument [${i + 1}]: `)
   }
   console.log("\nFetching all the necessary data to start mining\n")
-  const txReceipt = await contractFunctionCall(
-    txType,
-    contractAddress,
-    functionName,
-    arrayOfArgs,
-    network,
-    projectID
-  )
+  const userInputData = { txType, contractAddress, functionName, arrayOfArgs }
+  const txReceipt = await contractFunctionCall(userInputData)
   return txReceipt
 }
 

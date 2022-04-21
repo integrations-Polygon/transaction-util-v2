@@ -3,7 +3,7 @@ const {
   fetchGasPriceEIP1559,
 } = require("../utils/fetchData")
 
-const handleCallTx = async (
+const handleCallTx = async ({
   signer,
   txType,
   contractAddress,
@@ -11,8 +11,8 @@ const handleCallTx = async (
   arrayOfArgs,
   iface,
   nonce,
-  provider
-) => {
+  provider,
+}) => {
   let gasLimit
   try {
     if (txType === "1") {
