@@ -1,3 +1,10 @@
+/* Basic function to map the necessary data from the
+ * transaction receipt generated and return the newly mapped data .
+ *
+ * txReceipt.to is 0x0000 or null only when we are trying to deploy a smartcontract
+ * so we map for contract address, else we dont map for contract address
+ */
+
 const dataMapping = async (txReceipt) => {
   try {
     if (txReceipt.to === null) {

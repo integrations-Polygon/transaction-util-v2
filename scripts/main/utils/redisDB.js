@@ -1,6 +1,7 @@
 const Redis = require("redis")
 const redisClient = Redis.createClient()
 
+// Function to save mapped receipt to redis database
 const redisDB = async (mappedReceipt) => {
   try {
     await redisClient.connect()

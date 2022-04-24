@@ -1,6 +1,7 @@
 const axios = require("axios").default
 const explorerApiKey = process.env.EXPLORER_API_KEY
 
+// Function to fetch latest polygon legacy(type 1) gas station data
 async function fetchGasPriceLegacy() {
   try {
     return (await axios.get("https://gasstation-mainnet.matic.network/v1")).data
@@ -10,6 +11,7 @@ async function fetchGasPriceLegacy() {
   }
 }
 
+// Function to fetch latest polygon legacy(type 1) gas station data
 async function fetchGasPriceEIP1559() {
   try {
     return (await axios.get("https://gasstation-mainnet.matic.network/v2")).data
@@ -19,6 +21,7 @@ async function fetchGasPriceEIP1559() {
   }
 }
 
+// Function to fetch your smart contract ABI data
 async function fetchAbiData(contractAddress) {
   try {
     return (

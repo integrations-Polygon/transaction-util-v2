@@ -1,5 +1,6 @@
 const fs = require("fs")
 
+// Function to save receipt locally as a JSON log file
 const saveReceipt = async (mappedReceipt) => {
   try {
     if (fs.existsSync("log/log.json", "utf-8")) {

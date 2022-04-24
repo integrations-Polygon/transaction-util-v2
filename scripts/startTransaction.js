@@ -9,6 +9,7 @@ const dataMapping = require("./main/utils/dataMapping")
 
 async function startTransaction() {
   let txReceipt
+
   console.log("\nStarting the transaction process\n")
   console.log("Select a transaction to proceed:-")
   console.log("1. Deploy your smart contract.")
@@ -26,8 +27,13 @@ async function startTransaction() {
     if (choice === "3") txReceipt = await send()
 
     if (txReceipt !== null && txReceipt !== undefined) {
+      // success transaction receipt gets mapped here
       const mappedReceipt = await dataMapping(txReceipt)
+
+      // saves the mapped transaction receipt in local JSON log file
       await saveReceipt(mappedReceipt)
+
+      // saves the transaction receipt in redisDB
       await redisDB(mappedReceipt)
     }
     return
