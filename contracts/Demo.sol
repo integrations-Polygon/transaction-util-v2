@@ -2,9 +2,14 @@
 pragma solidity ^0.8.0;
 
 contract Demo {
-    event Echo(string message);
+    uint256 private number = 10;
+    uint256 private updateNumber;
 
-    function echo(string calldata message) external {
-        emit Echo(message);
+    function setNumber(uint256 _number) external {
+        updateNumber = number + _number;
+    }
+
+    function getNumber() external view returns (uint256) {
+        return updateNumber;
     }
 }
