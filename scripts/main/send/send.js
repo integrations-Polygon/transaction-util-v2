@@ -100,8 +100,7 @@ async function send() {
     amountInMATIC,
   }
 
-  // Pass the user input data object to start the
-  // Transaction process
+  // Pass the user input data object to start the transaction process
   const txReceipt = await accountTransfer(userInputData)
 
   return txReceipt
