@@ -21,7 +21,7 @@ cp .example.env .env
 ```
 - Configure environment variables in `.env`
 ```
-NETWORK = your_network_name
+NETWORK = your_network_name // matic for polygon mainnet
 PROJECT_ID = your_provider_project_id
 RPC_PROVIDER = your_provider_rpc_url
 SIGNER_PRIVATE_KEY = your_private_key
