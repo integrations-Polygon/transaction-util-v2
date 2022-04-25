@@ -31,5 +31,5 @@ EXPLORER_API_KEY = your_explorer_api_key
 
 ### Run Scripts
 ```sh
-npx hardhat run ./scripts/..
+npx hardhat run ./scripts/startTransaction.js
 ```
