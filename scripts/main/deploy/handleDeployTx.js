@@ -83,7 +83,7 @@ const handleDeployTx = async ({
       const gasLimit = await provider.estimateGas({
         type: 2,
         nonce: nonce,
-        gasLimit: 14_999_999,
+        gasLimit: 14_999_999, // polygon transaction limit
         maxFeePerGas: maxFee,
         data: deployTransactionData,
         maxPriorityFeePerGas: maxPriorityFee,
