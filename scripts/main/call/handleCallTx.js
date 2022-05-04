@@ -22,7 +22,7 @@ const handleCallTx = async ({
      */
     const encodedFunctionData = iface.encodeFunctionData(
       functionName.toString(),
-      [arrayOfArgs.toString()]
+      [...arrayOfArgs]
     )
 
     // For type 1 transaction
