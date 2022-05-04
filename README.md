@@ -1,6 +1,6 @@
 # Transaction-Util-V2
 
-This repository contains the Hardhat Polygon development environment for the development and testing of the Transaction util v2.
+Transaction-util is a utility for sending transactions to the Polygon network in a robust manner.
 
 ## Getting started
 - Clone this repository
